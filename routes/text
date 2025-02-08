@@ -11,29 +11,14 @@ const fs = require("fs");
 // Route for marking attendance
 router.post("/mark", protect, async (req, res) => {
     const { location, selfie } = req.body;
-    const today = moment().startOf("day").toDate(); // Get today's date without time
 
     try {
-        // Check if attendance for today already exists
-        const existingAttendance = await Attendance.findOne({ 
-            user: req.user.id, 
-            date: { $gte: today } // Ensures attendance is only marked once per day
-        });
-
-        if (existingAttendance) {
-            return res.status(400).json({ 
-                message: "Attendance already marked for today", 
-                attendance: existingAttendance 
-            });
-        }
-
         // Create a new attendance record
         const attendance = new Attendance({
             user: req.user.id,
-            date: today, // Ensure date is stored correctly
             location: {
                 type: "Point",
-                coordinates: [location.longitude, location.latitude], // Store correct coordinates
+                coordinates: [location.longitude, location.latitude], // Ensure the coordinates are correct
             },
             selfie,
         });
