@@ -21,6 +21,7 @@ app.use(cors({origin:"*", credentials: true}));
 app.use(morgan("dev"));
 
 // Routes
+app.use("/api/users", require("./routes/userRoutes.js"));
 app.use("/api/auth", require("./routes/authRoutes"));
 // Use the attendance routes
 app.use("/api/attendance", attendanceRoutes);
