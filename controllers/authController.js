@@ -3,11 +3,11 @@ const jwt = require("jsonwebtoken");
 
 // ✅ REGISTER NEW USER
 exports.registerUser = async (req, res) => {
-    const { name, email, password, role, department, status, leaveBalance, workingDays, salary } = req.body;
+    const { userId, name, email, password, role, department, status, leaveBalance, workingDays, salary } = req.body;
 
     try {
         // 🔹 Check if all required fields are provided
-        if (!name || !email || !password || !role || !department || !salary) {
+        if (!userId || !name || !email || !password || !role || !department || !salary) {
             return res.status(400).json({ success: false, message: "All fields are required" });
         }
 
@@ -19,6 +19,7 @@ exports.registerUser = async (req, res) => {
 
         // 🔹 Create new user instance (password will be hashed automatically in the model)
         const user = new User({
+            userId,
             name,
             email,
             password,
@@ -39,7 +40,9 @@ exports.registerUser = async (req, res) => {
             success: true,
             message: "User registered successfully",
             user: {
+                
                 _id: user._id,
+                userId,
                 name: user.name,
                 email: user.email,
                 role: user.role,
