@@ -16,7 +16,12 @@ const app = express();
 // Middleware
 app.use(express.json({limit:"100mb"}));
 app.use(express.urlencoded({limit:"10mb",extended:true}));
-app.use(cors({origin:"*", credentials: true}));
+app.use(cors({
+    origin: 'https://magenta-quokka-bd5987.netlify.app', // Replace with your frontend URL
+    methods: 'GET,POST,PUT,DELETE',
+    credentials: true
+  }));
+app.use(cors());
 
 app.use(morgan("dev"));
 
