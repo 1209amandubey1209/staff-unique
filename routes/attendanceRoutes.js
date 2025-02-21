@@ -18,7 +18,16 @@ const s3 = new AWS.S3({
 });
 
 // Multer setup for handling file uploads
-const upload = multer({ storage: multer.memoryStorage() });
+const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 5 * 1024 * 1024 }, // Limit file size to 5MB
+    fileFilter: (req, file, cb) => {
+        if (!file.mimetype.startsWith("image/")) {
+            return cb(new Error("Only image files are allowed!"), false);
+        }
+        cb(null, true);
+    },
+});
 
 // Route for marking attendance with selfie upload
 router.post("/mark", protect, upload.single("selfie"), async (req, res) => {
