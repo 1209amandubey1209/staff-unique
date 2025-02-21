@@ -6,18 +6,30 @@ const moment = require("moment");  // To handle dates
 const xlsx = require("xlsx");
 const PDFDocument = require("pdfkit");
 const fs = require("fs");
+const AWS = require("aws-sdk");
+const multer = require("multer");
 
 
-// Route for marking attendance
-router.post("/mark", protect, async (req, res) => {
-    const { location, selfie } = req.body;
-    const today = moment().startOf("day").toDate(); // Get today's date without time
+// AWS S3 Configuration
+const s3 = new AWS.S3({
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    region: process.env.AWS_REGION,
+});
+
+// Multer setup for handling file uploads
+const upload = multer({ storage: multer.memoryStorage() });
+
+// Route for marking attendance with selfie upload
+router.post("/mark", protect, upload.single("selfie"), async (req, res) => {
+    const { location } = req.body;
+    const today = moment().startOf("day").toDate();
 
     try {
         // Check if attendance for today already exists
         const existingAttendance = await Attendance.findOne({ 
             user: req.user.id, 
-            date: { $gte: today } // Ensures attendance is only marked once per day
+            date: { $gte: today }
         });
 
         if (existingAttendance) {
@@ -27,15 +39,29 @@ router.post("/mark", protect, async (req, res) => {
             });
         }
 
+        // Upload the selfie to AWS S3
+        let selfieUrl = "";
+        if (req.file) {
+            const params = {
+                Bucket: process.env.AWS_BUCKET_NAME,
+                Key: `selfies/${Date.now()}_${req.file.originalname}`,
+                Body: req.file.buffer,
+                ContentType: req.file.mimetype,
+                ACL: "public-read",
+            };
+            const uploadResult = await s3.upload(params).promise();
+            selfieUrl = uploadResult.Location; // Get S3 URL
+        }
+
         // Create a new attendance record
         const attendance = new Attendance({
             user: req.user.id,
-            date: today, // Ensure date is stored correctly
+            date: today,
             location: {
                 type: "Point",
-                coordinates: [location.longitude, location.latitude], // Store correct coordinates
+                coordinates: [location.longitude, location.latitude],
             },
-            selfie,
+            selfie: selfieUrl,  // Store S3 URL instead of Base64
         });
 
         await attendance.save();
